@@ -8,8 +8,6 @@ set_description("Kirei: A Modern UI Framework")
 set_license("MIT")
 set_warnings("all", "error")
 set_languages("cxx20")
-set_author("Dimitri Mitchell")
-add_contributors("qtpyDev")
 
 -- Common build modes
 add_rules("mode.debug", "mode.release")
@@ -17,26 +15,23 @@ add_rules("mode.debug", "mode.release")
 -- Include directories
 add_includedirs("include", "src")
 
--- fetch glfw dependency
+-- Fetch glfw dependency
 add_requires("glfw")
 
 -- Target for Kirei Library (DLL)
 target("Kirei")
     set_kind("shared")  -- Dynamic DLL
     set_basename("kirei")
-    
-    -- Version details
-    set_version("0.0.1", {build = "%Y%m%d%H%M"})  -- Set version format and build info
-    
+
     -- Source files
-    add_files("src/**/*.cpp")  -- All .cpp files under src/
-    
+    add_files("src/core/*.cpp", "src/window/*.cpp", "src/input/*.cpp")
+
     -- Include directories
     add_includedirs("include", "src")
-    
+
     -- Use glfw dependency
     add_packages("glfw")
-    
+
     -- Platform-specific configurations
     if is_plat("windows") then
         add_defines("GLFW_INCLUDE_NONE")
@@ -55,14 +50,11 @@ target("Kirei")
         set_strip("all")
     end
 
--- Target for Example Projects
+-- Target for Showroom Example Project
 target("showroom")
-    set_kind("binary")  -- Build as an executable
+    set_kind("binary")
     set_basename("showroom")
     set_group("examples")
-    
-    -- Version details
-    set_version("1.0.0", {build = "%Y%m%d%H%M"})
     
     -- Source files for example project
     add_files("examples/showroom/*.cpp")
@@ -70,7 +62,7 @@ target("showroom")
     -- Include directories for examples
     add_includedirs("include", "src", "examples/showroom")
     
-    -- Link with the Kirei DLL
+    -- Link with Kirei DLL
     add_links("kirei")
     add_linkdirs("$(buildir)/$(plat)/$(arch)/$(mode)")
     
@@ -90,9 +82,9 @@ target("showroom")
         set_strip("all")
     end
 
--- Copy Kirei DLL to the output directory of example1 for runtime
+-- Copy Kirei DLL to the output directory of showroom for runtime
 after_build(function (target)
-    if target:name() == "example1" then
+    if target:name() == "showroom" then
         os.cp("$(buildir)/$(plat)/$(arch)/$(mode)/kirei.dll", target:targetdir())
     end
 end)

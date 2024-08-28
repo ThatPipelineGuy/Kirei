@@ -1,0 +1,9 @@
+// Ignore build artifacts
+build/
+
+// Ignore xmake cache
+.xmake/
+
+// Ignore IDE-specific files
+.vscode/
+.idea/
