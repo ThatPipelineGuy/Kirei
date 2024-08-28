@@ -1,15 +1,16 @@
 #include "Window.hpp"
-#include "../core/Context.hpp"  // Include context to ensure GLFW is initialized
 #include <iostream>
 #include <stdexcept>
-#include <format>  // C++20 for formatted strings
+#include <format>
 
 namespace kirei {
 
 Window::Window(int width, int height, const std::string& title) 
     : m_width(width), m_height(height), m_title(title) {
 
-    Context::instance();  // Ensure GLFW context is initialized
+    if (!glfwInit()) {
+        throw std::runtime_error("Please initialize a kirei::Context first.");
+    }
 
     // Set GLFW window hints (can be customized)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -19,17 +20,17 @@ Window::Window(int width, int height, const std::string& title)
     // Create the window
     m_window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
     if (!m_window) {
-        throw std::runtime_error(std::format("Failed to create GLFW window: {}", title));
+        throw std::runtime_error(std::format("Failed to create Kirei window: {}", title));
     }
 
     glfwMakeContextCurrent(m_window);
-    std::cout << std::format("Window created: {} ({}x{})\n", title, width, height);
+    std::cout << std::format("Kirei Window created: {} ({}x{})\n", title, width, height);
 }
 
 Window::~Window() {
     if (m_window) {
         glfwDestroyWindow(m_window);
-        std::cout << std::format("Window destroyed: {}\n", m_title);
+        std::cout << std::format("Kirei Window destroyed: {}\n", m_title);
     }
 }
 
@@ -43,14 +44,47 @@ void Window::update() {
 }
 
 Window& Window::onResize(std::function<void(int, int)> callback) {
-    glfwSetFramebufferSizeCallback(m_window, [callback = std::move(callback)](GLFWwindow*, int width, int height) {
-        callback(width, height);
-    });
+    m_resizeCallback = std::move(callback);  // Store the callback
+
+    // Register the static callback with GLFW
+    glfwSetFramebufferSizeCallback(m_window, framebufferSizeCallback);
     return *this;
+}
+
+void Window::framebufferSizeCallback(GLFWwindow* window, int width, int height) {
+    // Retrieve the Window instance associated with the GLFWwindow pointer
+    Window* currentWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    if (currentWindow && currentWindow->m_resizeCallback) {
+        currentWindow->m_resizeCallback(width, height);  // Call the user-provided callback
+    }
 }
 
 GLFWwindow* Window::getGLFWwindow() const {
     return m_window;
+}
+
+// Move constructor
+Window::Window(Window&& other) noexcept 
+    : m_window(other.m_window), m_width(other.m_width), m_height(other.m_height), m_title(std::move(other.m_title)) {
+    other.m_window = nullptr;
+}
+
+// Move assignment operator
+Window& Window::operator=(Window&& other) noexcept {
+    if (this != &other) {
+        // Clean up current window
+        if (m_window) {
+            glfwDestroyWindow(m_window);
+        }
+
+        // Transfer ownership
+        m_window = other.m_window;
+        m_width = other.m_width;
+        m_height = other.m_height;
+        m_title = std::move(other.m_title);
+        other.m_window = nullptr;
+    }
+    return *this;
 }
 
 }

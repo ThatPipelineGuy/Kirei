@@ -3,20 +3,22 @@
 
 namespace kirei {
 
+// Singleton instance
 Input& Input::instance() {
     static Input input;
     return input;
 }
 
+// Register the key callback using a static function that GLFW can call
 void Input::registerKeyCallback(GLFWwindow* window, KeyCallback callback) {
-    glfwSetKeyCallback(window, [this, callback = std::move(callback)](GLFWwindow*, int key, int scancode, int action, int mods) {
-        keyCallback(key, scancode, action, mods);
-    });
-    m_keyCallback = std::move(callback);
+    m_keyCallback = std::move(callback);  // Store the callback
+    glfwSetKeyCallback(window, keyCallbackInternal);  // Register static callback function
 }
 
-void Input::keyCallback(int key, int scancode, int action, int mods) {
-    if (m_keyCallback) m_keyCallback(key, scancode, action, mods);
+// Static function matching GLFW's required callback signature
+void Input::keyCallbackInternal(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    // Forward the call to the instance's keyCallback method
+    Input::instance().m_keyCallback(key, scancode, action, mods);
 }
 
-} // namespace kirei
+}

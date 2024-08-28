@@ -2,8 +2,6 @@
 
 #include <GLFW/glfw3.h>
 #include <functional>
-#include <map>
-#include <utility>
 
 namespace kirei {
 
@@ -11,21 +9,10 @@ class Input {
 public:
     using KeyCallback = std::function<void(int, int, int, int)>;
 
-    static Input& instance() {
-        static Input input;
-        return input;
-    }
+    static Input& instance();
 
-    void registerKeyCallback(GLFWwindow* window, KeyCallback callback) {
-        glfwSetKeyCallback(window, [this, callback = std::move(callback)](GLFWwindow* win, int key, int scancode, int action, int mods) {
-            keyCallback(key, scancode, action, mods);
-        });
-        m_keyCallback = std::move(callback);
-    }
-
-    void keyCallback(int key, int scancode, int action, int mods) {
-        if (m_keyCallback) m_keyCallback(key, scancode, action, mods);
-    }
+    // Register a key callback with GLFW, using a static method for the actual callback
+    void registerKeyCallback(GLFWwindow* window, KeyCallback callback);
 
 private:
     KeyCallback m_keyCallback;
@@ -34,6 +21,9 @@ private:
     ~Input() = default;
     Input(const Input&) = delete;
     Input& operator=(const Input&) = delete;
+
+    // Static callback function that conforms to GLFWkeyfun type
+    static void keyCallbackInternal(GLFWwindow* window, int key, int scancode, int action, int mods);
 };
 
 }

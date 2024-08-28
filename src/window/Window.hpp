@@ -1,68 +1,39 @@
 #pragma once
-#include "Context.hpp"
+
 #include <GLFW/glfw3.h>
 #include <functional>
 #include <string>
-#include <iostream>
-#include <format>
 
 namespace kirei {
 
 class Window {
 public:
-    Window(int width, int height, const std::string& title) 
-        : m_width(width), m_height(height), m_title(title) {
-        
-        Context::instance();  // Ensure GLFW context is initialized
+    Window(int width, int height, const std::string& title);
+    ~Window();
 
-        // Set GLFW window hints
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    [[nodiscard]] bool shouldClose() const;
+    void update();
 
-        // Create the window
-        m_window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
-        if (!m_window) {
-            throw std::runtime_error(std::format("Failed to create GLFW window: {}", title));
-        }
+    Window& onResize(std::function<void(int, int)> callback);
 
-        glfwMakeContextCurrent(m_window);
-        std::cout << std::format("Window created: {} ({}x{})\n", title, width, height);
-    }
+    [[nodiscard]] GLFWwindow* getGLFWwindow() const;
 
-    [[nodiscard]] bool shouldClose() const {
-        return glfwWindowShouldClose(m_window);
-    }
+    Window(const Window&) = delete;
+    Window& operator=(const Window&) = delete;
 
-    void update() {
-        glfwSwapBuffers(m_window);
-        glfwPollEvents();
-    }
-
-    Window& onResize(std::function<void(int, int)> callback) {
-        glfwSetFramebufferSizeCallback(m_window, [callback = std::move(callback)](GLFWwindow*, int width, int height) {
-            callback(width, height);
-        });
-        return *this;
-    }
-
-    // Getter for GLFWwindow pointer
-    [[nodiscard]] GLFWwindow* getGLFWwindow() const {
-        return m_window;
-    }
-
-    ~Window() {
-        if (m_window) {
-            glfwDestroyWindow(m_window);
-            std::cout << std::format("Window destroyed: {}\n", m_title);
-        }
-    }
+    Window(Window&& other) noexcept;
+    Window& operator=(Window&& other) noexcept;
 
 private:
     GLFWwindow* m_window;
     int m_width;
     int m_height;
     std::string m_title;
+
+    std::function<void(int, int)> m_resizeCallback;  // Store the resize callback
+
+    // Static function to handle framebuffer size changes
+    static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 };
 
 }

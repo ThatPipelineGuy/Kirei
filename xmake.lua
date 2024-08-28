@@ -1,7 +1,7 @@
 -- Project configuration
 set_project("Kirei")
-set_version("0.0.1")  -- Version of your project
-set_xmakever("2.9.0")  -- Minimum xmake version required
+set_version("0.0.1")
+set_xmakever("2.9.0")
 
 -- Metadata
 set_description("Kirei: A Modern UI Framework")
@@ -15,22 +15,26 @@ add_rules("mode.debug", "mode.release")
 -- Include directories
 add_includedirs("include", "src")
 
--- Fetch glfw dependency
+-- Fetch dependencies
 add_requires("glfw")
+add_requires("glad")
 
--- Target for Kirei Library (DLL)
+-- Target for Kirei Library (Static Library)
 target("Kirei")
-    set_kind("shared")  -- Dynamic DLL
+    set_kind("static")
     set_basename("kirei")
+    
+    -- Set output directory for kirei.lib
+    set_targetdir("$(buildir)/$(plat)/$(arch)/$(mode)")
 
     -- Source files
-    add_files("src/core/*.cpp", "src/window/*.cpp", "src/input/*.cpp")
+    add_files("src/core/*.cpp", "src/window/*.cpp", "src/input/*.cpp", "src/renderer/*.cpp")
 
     -- Include directories
     add_includedirs("include", "src")
 
-    -- Use glfw dependency
-    add_packages("glfw")
+    -- Use dependencies
+    add_packages("glfw", "glad")
 
     -- Platform-specific configurations
     if is_plat("windows") then
@@ -56,19 +60,24 @@ target("showroom")
     set_basename("showroom")
     set_group("examples")
     
+    -- Set dependency on Kirei library
+    add_deps("Kirei")
+
     -- Source files for example project
     add_files("examples/showroom/*.cpp")
     
     -- Include directories for examples
     add_includedirs("include", "src", "examples/showroom")
     
-    -- Link with Kirei DLL
+    -- Link with Kirei static library
     add_links("kirei")
+    
+    -- Explicitly set the link directory to where Kirei's .lib file is generated
     add_linkdirs("$(buildir)/$(plat)/$(arch)/$(mode)")
-    
-    -- Use glfw dependency
-    add_packages("glfw")
-    
+
+    -- Use dependencies
+    add_packages("glfw", "glad")
+
     -- Debug build configurations
     if is_mode("debug") then
         set_symbols("debug")
@@ -81,10 +90,3 @@ target("showroom")
         set_optimize("fastest")
         set_strip("all")
     end
-
--- Copy Kirei DLL to the output directory of showroom for runtime
-after_build(function (target)
-    if target:name() == "showroom" then
-        os.cp("$(buildir)/$(plat)/$(arch)/$(mode)/kirei.dll", target:targetdir())
-    end
-end)
